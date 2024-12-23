@@ -6,7 +6,7 @@
   };
 
   # Flake actions/outputs
-  outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachDefaultSystem (system:
+  outputs = { flake-utils, nixpkgs, ... }: flake-utils.lib.eachdefaultsystem (system:
     let
       pkgs = import nixpkgs {
         inherit system;

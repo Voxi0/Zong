@@ -13,3 +13,10 @@ Zong will work on any Linux distro running Wayland although you can most likely 
 modifying [flake.nix](flake.nix) yourself. Remember that you have to modify [build.zig](build.zig) as well since it's hardcoded to build only
 for the Wayland backend.
 - And any other platforms that Zig and Raylib supports that I'm unaware of.
+
+### How to Build
+The ideal way to build and run Zong is to (install Nix)[https://nixos.org/download/] on your system and enter the development environment
+by using the command ''nix develop'' in the root of the project directory. Then run ''zig build run'' to build and run the project.
+
+Pass whatever flags you wish in order to choose what target to compile for and the optimization mode. Learn more about this from
+(here)[https://ziglang.org/learn/build-system/] as I have no intentions to teach you about Nix and the Zig build system.

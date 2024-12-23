@@ -1,56 +1,82 @@
-const std = @import("std");
-const rlz = @import("raylib-zig");
+const std = @import("std");     // Standard library - For the builder
+const rlz = @import("raylib-zig");    // Raylib Zig - Zig bindings for Raylib
 
+// Settings
+const PROJECT_NAME = "Zong";
+
+// Builder
 pub fn build(b: *std.Build) !void {
     // Allow the person running 'zig build' to choose target system and optimization mode
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     // Dependencies
-    const raylib_dep = b.dependency("raylib-zig", .{
+    const raylibDep = b.dependency("raylib-zig", .{
         .target = target,
         .optimize = optimize,
         .linux_display_backend = rlz.LinuxDisplayBackend.Wayland,
     });
 
-    const raylib = raylib_dep.module("raylib");
-    const raylib_artifact = raylib_dep.artifact("raylib");
+    // Modules
+    const raylib = raylibDep.module("raylib");
+    const raygui = raylibDep.module("raygui");
 
-    // Web exports are completely separate
+    // Artifacts
+    const raylibArtifact = raylibDep.artifact("raylib");
+
+    // Web exports
     if(target.query.os_tag == .emscripten) {
-        const exe_lib = try rlz.emcc.compileForEmscripten(b, "learningRaylib", "src/main.zig", target, optimize);
+        // Compile program for Emscripten
+        const exeLib = try rlz.emcc.compileForEmscripten(b, PROJECT_NAME, "src/main.zig", target, optimize);
 
-        exe_lib.linkLibrary(raylib_artifact);
-        exe_lib.root_module.addImport("raylib", raylib);
+        // Link libraries
+        exeLib.linkLibrary(raylibArtifact);
 
-        // Note that raylib itself is not actually added to the exe_lib output file, so it also needs to be linked with emscripten.
-        const link_step = try rlz.emcc.linkWithEmscripten(b, &[_]*std.Build.Step.Compile{ exe_lib, raylib_artifact });
-        //this lets your program access files like "resources/my-image.png":
-        link_step.addArg("--embed-file");
-        link_step.addArg("resources/");
+        // Add modules that can be imported in our program
+        exeLib.root_module.addImport("raylib", raylib);
+        exeLib.root_module.addImport("raygui", raygui);
 
-        b.getInstallStep().dependOn(&link_step.step);
-        const run_step = try rlz.emcc.emscriptenRunStep(b);
-        run_step.step.dependOn(&link_step.step);
-        const run_option = b.step("run", "Run learningRaylib");
-        run_option.dependOn(&run_step.step);
+        // Raylib itself isn't actually added to the "exeLib" output file so it also needs to be linked with Emscripten
+        const linkStep = try rlz.emcc.linkWithEmscripten(b, &[_]*std.Build.Step.Compile{ exeLib, raylibArtifact });
+
+        // Allows your program to access files like "resources/my-image.png"
+        linkStep.addArg("--embed-file");
+        linkStep.addArg("resources/");
+
+        b.getInstallStep().dependOn(&linkStep.step);
+
+        // Run step
+        const runStep = try rlz.emcc.emscriptenRunStep(b);
+        runStep.step.dependOn(&linkStep.step);
+        const runOption = b.step("run", "Run " ++ PROJECT_NAME);
+        runOption.dependOn(&runStep.step);
+
         return;
     }
 
+    // Native application/executable
     const exe = b.addExecutable(.{
-        .name = "Pong",
+        .name = PROJECT_NAME,
         .root_source_file = b.path("src/main.zig"),
         .optimize = optimize,
         .target = target
     });
 
+    // Set include directory
+    exe.addIncludePath(b.path("./include/"));
+
     // Link libraries
-    exe.linkLibrary(raylib_artifact);
+    exe.linkLibrary(raylibArtifact);
+
+    // Add modules that can be imported in our program
     exe.root_module.addImport("raylib", raylib);
+    exe.root_module.addImport("raygui", raygui);
 
-    const run_cmd = b.addRunArtifact(exe);
-    const run_step = b.step("run", "Run learningRaylib");
-    run_step.dependOn(&run_cmd.step);
+    // Run step
+    const runCmd = b.addRunArtifact(exe);
+    const runStep = b.step("run", "Run learningRaylib");
+    runStep.dependOn(&runCmd.step);
 
+    // Install program
     b.installArtifact(exe);
 }

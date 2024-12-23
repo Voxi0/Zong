@@ -1,5 +1,6 @@
 // Raylib
 const rl = @import("raylib");
+const rgi = @import("raygui");
 
 // Screen dimensions
 const SCR_WIDTH: u16 = 800;
@@ -167,6 +168,11 @@ pub fn main() anyerror!void {
             paddle2.render();
 
             // Interface/UI
+            _ = rgi.guiMessageBox(
+                (rl.Rectangle){ .x = 85, . y = 70, .width = 250, .height = 100 },
+                "#191#Message Box", "Hi! This is a message!", "Nice;Cool;Meh"
+            );
+
             rl.drawText(rl.textFormat("%i", .{player1Score}), 10, 10, 20, rl.Color.white);
             rl.drawText(rl.textFormat("%i", .{player2Score}), SCR_WIDTH - 30, 10, 20, rl.Color.white);
             rl.drawFPS(10, SCR_HEIGHT - 30);

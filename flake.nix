@@ -22,7 +22,7 @@
         ];
         shellHook = ''
           # Change bash shell prompt
-          export PS1="learningRaylib> "
+          export PS1="\w - <Zong> "
         '';
       };
     }
